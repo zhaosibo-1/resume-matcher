@@ -1,0 +1,36 @@
+services:
+  resume-matcher:
+    build: .
+    image: resume-matcher:latest
+    container_name: resume-matcher
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      # 复制 .env.example 为 .env 并填入你自己的 Key。
+      # 即使不填，服务也会以「规则引擎模式」正常启动：
+      # 解析、技能归一化、六维打分、面试问题生成全都是真实的。
+      - .env
+    environment:
+      # 生产环境请把 CORS 收窄到具体域名
+      CORS_ORIGINS: "*"
+      # 容器内落盘目录（被下面的 volume 覆盖）
+      DATA_DIR: "/app/data"
+      # 上传大小上限（MB）
+      MAX_UPLOAD_MB: "5"
+      # 解析引擎：auto（有 Key 用模型并自动降级）/ rule / llm
+      PARSER_ENGINE: "auto"
+    volumes:
+      # 上传的简历持久化到宿主机，容器重建后不丢；
+      # 该目录在 .gitignore / .dockerignore 里都已被排除
+      - ./data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4).status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3

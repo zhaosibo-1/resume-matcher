@@ -1,0 +1,37 @@
+# ===== 机密：绝对不要提交 =====
+.env
+*.env
+!.env.example
+secrets.json
+
+# ===== 运行时产物 =====
+# 上传的简历落盘在这里，属于用户隐私数据，绝不能进仓库。
+# 注意写法必须是 data/* 而不是 data/：
+# 目录整体被排除时，Git 无法用 ! 把目录内的文件重新包含进来。
+data/*
+!data/.gitkeep
+logs/
+*.log
+traces/
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.so
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ===== 编辑器 / 系统 =====
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

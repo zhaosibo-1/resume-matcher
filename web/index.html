@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>简历 · JD 智能匹配系统</title>
+<style>
+:root{
+  --bg:#070a12; --bg2:#0c1120; --card:rgba(255,255,255,.033); --card2:#111828;
+  --border:rgba(255,255,255,.085); --border2:rgba(255,255,255,.17);
+  --text:#e8edf7; --dim:#93a3bb; --faint:#5f6f88;
+  --accent:#4f8cff; --accent2:#22d3ee; --ok:#34d399; --warn:#fbbf24; --bad:#f87171; --purple:#a78bfa;
+  --mono:ui-monospace,"Cascadia Code",Consolas,"Courier New",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1100px 600px at 12% -8%,rgba(79,140,255,.15),transparent 60%),
+    radial-gradient(900px 500px at 92% 4%,rgba(34,211,238,.09),transparent 60%),
+    var(--bg);
+  color:var(--text);
+  font:14px/1.65 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.13);border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.24)}
+
+/* ---------- 顶部 ---------- */
+header{
+  position:sticky;top:0;z-index:50;backdrop-filter:blur(18px);
+  background:rgba(7,10,18,.8);border-bottom:1px solid var(--border);
+}
+.hwrap{max-width:1720px;margin:0 auto;padding:14px 26px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:11px;font-size:16px;font-weight:650;letter-spacing:.2px}
+.logo .mark{
+  width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:15px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 4px 16px rgba(79,140,255,.4)
+}
+.logo small{color:var(--faint);font-weight:400;font-size:11.5px;letter-spacing:.4px}
+.spacer{flex:1}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{
+  font-size:11.5px;padding:4px 11px;border-radius:20px;border:1px solid var(--border);
+  background:var(--card);color:var(--dim);display:flex;align-items:center;gap:6px;white-space:nowrap
+}
+.badge b{color:var(--text);font-weight:600;font-family:var(--mono)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--faint);flex:none}
+.dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.dot.off{background:var(--warn)}
+
+/* ---------- 布局 ---------- */
+main{max-width:1720px;margin:0 auto;padding:22px 26px 60px;display:grid;grid-template-columns:minmax(340px,400px) 1fr;gap:22px;align-items:start}
+.col{display:flex;flex-direction:column;gap:18px;min-width:0}
+@media(max-width:1180px){main{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:15px;overflow:hidden}
+.card>.hd{
+  display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,.014)
+}
+.card>.hd h2{font-size:13.5px;font-weight:620;letter-spacing:.25px;display:flex;align-items:center;gap:8px}
+.card>.hd h2 .ico{color:var(--accent);font-size:15px}
+.card>.bd{padding:16px}
+.hd .spacer{flex:1}
+
+/* ---------- 表单 ---------- */
+textarea{
+  width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:11px;
+  color:var(--text);font:13px/1.72 var(--mono);padding:12px 13px;resize:vertical;outline:none;
+  transition:border-color .16s,box-shadow .16s
+}
+textarea:focus{border-color:rgba(79,140,255,.55);box-shadow:0 0 0 3px rgba(79,140,255,.12)}
+textarea::placeholder{color:var(--faint)}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+
+.btn{
+  border:1px solid var(--border2);background:rgba(255,255,255,.045);color:var(--text);
+  padding:7px 13px;border-radius:9px;font-size:12.5px;cursor:pointer;font-family:inherit;
+  transition:.16s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap
+}
+.btn:hover{background:rgba(255,255,255,.1);border-color:var(--border2)}
+.btn:disabled{opacity:.42;cursor:not-allowed}
+.btn.primary{
+  background:linear-gradient(135deg,var(--accent),#3b74e0);border-color:transparent;
+  font-weight:600;box-shadow:0 4px 16px rgba(79,140,255,.32)
+}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent;border-color:var(--border);color:var(--dim)}
+.btn.ghost:hover{color:var(--text)}
+
+/* ---------- 解析摘要 ---------- */
+.summary{margin-top:12px;padding:11px 13px;border-radius:11px;background:rgba(79,140,255,.055);border:1px solid rgba(79,140,255,.2);font-size:12.5px}
+.summary.hidden{display:none}
+.summary .row{display:flex;gap:8px;padding:2.5px 0;align-items:baseline}
+.summary .k{color:var(--faint);flex:none;width:64px;font-size:11.5px}
+.summary .v{color:var(--text);word-break:break-word}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.chip{
+  font-size:11px;padding:2.5px 8px;border-radius:6px;background:rgba(255,255,255,.06);
+  border:1px solid var(--border);color:var(--dim);font-family:var(--mono)
+}
+.chip.must{background:rgba(79,140,255,.14);border-color:rgba(79,140,255,.36);color:#a8c6ff}
+.chip.nice{background:rgba(167,139,250,.13);border-color:rgba(167,139,250,.32);color:#c9b8ff}
+.chip.hit{background:rgba(52,211,153,.13);border-color:rgba(52,211,153,.33);color:#7fe3c0}
+.chip.gap{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.3);color:#fca5a5}
+
+/* ---------- 进度 ---------- */
+.progress{margin-top:12px;display:none}
+.progress.on{display:block}
+.bar{height:3px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .35s ease}
+.progress .txt{margin-top:7px;font-size:11.5px;color:var(--dim);font-family:var(--mono);display:flex;justify-content:space-between}
+
+/* ---------- 空状态 ---------- */
+.empty{
+  padding:70px 30px;text-align:center;color:var(--faint);border:1px dashed var(--border);
+  border-radius:15px;background:rgba(255,255,255,.012)
+}
+.empty .big{font-size:40px;opacity:.32;margin-bottom:14px}
+.empty h3{color:var(--dim);font-size:14.5px;font-weight:600;margin-bottom:7px}
+.empty p{font-size:12.5px;max-width:420px;margin:0 auto;line-height:1.85}
+
+/* ---------- 总分 ---------- */
+.scorebox{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;padding:22px}
+@media(max-width:620px){.scorebox{grid-template-columns:1fr;gap:18px}}
+.ring{position:relative;width:150px;height:150px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .num{font-size:40px;font-weight:700;font-family:var(--mono);line-height:1;letter-spacing:-1.5px}
+.ring .lbl{font-size:11px;color:var(--faint);margin-top:5px;letter-spacing:1.4px}
+.verdictline{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.verdict{font-size:20px;font-weight:680;letter-spacing:.3px}
+.vtag{font-size:12px;padding:3px 11px;border-radius:20px;font-weight:650;font-family:var(--mono)}
+.v-A{background:rgba(52,211,153,.16);color:#6ee7b7;border:1px solid rgba(52,211,153,.36)}
+.v-B{background:rgba(79,140,255,.16);color:#93b8ff;border:1px solid rgba(79,140,255,.36)}
+.v-C{background:rgba(251,191,36,.15);color:#fcd34d;border:1px solid rgba(251,191,36,.34)}
+.v-D{background:rgba(248,113,113,.14);color:#fca5a5;border:1px solid rgba(248,113,113,.33)}
+.kpis{display:flex;gap:20px;flex-wrap:wrap}
+.kpi .n{font-size:17px;font-weight:660;font-family:var(--mono)}
+.kpi .t{font-size:11px;color:var(--faint);margin-top:2px}
+
+/* ---------- 雷达 ---------- */
+.radarwrap{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center}
+@media(max-width:760px){.radarwrap{grid-template-columns:1fr}}
+.radar{flex:none;margin:0 auto}
+.wlist{display:flex;flex-direction:column;gap:11px;min-width:0}
+.wrow{display:grid;grid-template-columns:88px 1fr 46px;gap:11px;align-items:center;font-size:12.5px}
+.wrow .nm{color:var(--dim);display:flex;align-items:center;gap:6px}
+.wrow .nm i{width:7px;height:7px;border-radius:2px;flex:none;display:block}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;background:rgba(255,255,255,.11);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);border:2.5px solid var(--bg2);box-shadow:0 0 0 1px var(--accent);cursor:grab}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--accent);border:2.5px solid var(--bg2);cursor:grab}
+.wrow .val{font-family:var(--mono);font-size:11.5px;color:var(--faint);text-align:right}
+.wrow.na{opacity:.34}
+.wrow.na input{pointer-events:none}
+
+/* ---------- 维度卡片 ---------- */
+.dims{display:flex;flex-direction:column;gap:11px}
+.dim{background:var(--card);border:1px solid var(--border);border-radius:13px;overflow:hidden;transition:border-color .16s}
+.dim:hover{border-color:var(--border2)}
+.dim .top{display:flex;align-items:center;gap:13px;padding:13px 16px;cursor:pointer}
+.dim .nm{font-size:13.5px;font-weight:600;width:82px;flex:none}
+.dim .track{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.075);overflow:hidden;min-width:60px}
+.dim .track i{display:block;height:100%;border-radius:3px;transition:width .4s cubic-bezier(.2,.8,.3,1)}
+.dim .sc{font-family:var(--mono);font-size:14px;font-weight:660;width:50px;text-align:right;flex:none}
+.dim .cw{font-family:var(--mono);font-size:11px;color:var(--faint);width:52px;text-align:right;flex:none}
+.dim .caret{color:var(--faint);font-size:10px;transition:transform .2s;flex:none}
+.dim.open .caret{transform:rotate(90deg)}
+.dim .det{display:none;padding:0 16px 15px;border-top:1px solid var(--border);margin-top:0}
+.dim.open .det{display:block}
+.dim .det .desc{font-size:12.5px;color:var(--dim);padding:12px 0 10px;line-height:1.8}
+.ev{font-size:12px;color:var(--dim);padding:6px 0 6px 12px;border-left:2px solid rgba(79,140,255,.4);margin:5px 0;line-height:1.75;font-family:var(--mono);word-break:break-word}
+.gap{font-size:12px;color:#fca5a5;padding:6px 0 6px 12px;border-left:2px solid rgba(248,113,113,.42);margin:5px 0;line-height:1.75}
+.sect-t{font-size:11px;color:var(--faint);letter-spacing:1.1px;margin:11px 0 5px;font-weight:600}
+
+/* ---------- 技能矩阵 ---------- */
+.matrix{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.mbox{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:11px;padding:13px}
+.mbox h4{font-size:12px;font-weight:620;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.mbox h4 .n{font-family:var(--mono);color:var(--faint);font-weight:400}
+
+/* ---------- 面试问题 ---------- */
+.qs{display:flex;flex-direction:column;gap:11px}
+.q{background:rgba(255,255,255,.02);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:11px;padding:13px 15px}
+.q.gap-q{border-left-color:var(--bad)}
+.q.project-q{border-left-color:var(--accent2)}
+.q .qt{font-size:13px;font-weight:560;line-height:1.72}
+.q .qr{font-size:11.5px;color:var(--faint);margin-top:7px;line-height:1.7}
+.q .qh{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.ktag{font-size:10.5px;padding:2px 8px;border-radius:5px;font-family:var(--mono);font-weight:600}
+.k-verify{background:rgba(79,140,255,.16);color:#93b8ff}
+.k-project{background:rgba(34,211,238,.15);color:#67e8f9}
+.k-gap{background:rgba(248,113,113,.15);color:#fca5a5}
+
+/* ---------- 列表 ---------- */
+ul.li{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.li li{font-size:12.5px;color:var(--dim);padding-left:19px;position:relative;line-height:1.78}
+ul.li li::before{content:"▸";position:absolute;left:2px;color:var(--accent)}
+ul.li.good li::before{content:"✓";color:var(--ok)}
+ul.li.warn li::before{content:"!";color:var(--warn);font-weight:700}
+ul.li.adv li::before{content:"→";color:var(--accent2)}
+
+/* ---------- 词典 ---------- */
+.dict .search{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.dict input[type=text]{
+  flex:1;min-width:180px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:9px;
+  color:var(--text);padding:7px 12px;font-size:13px;outline:none;font-family:inherit
+}
+.dict input[type=text]:focus{border-color:rgba(79,140,255,.55)}
+.dictgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:10px;margin-top:14px;max-height:400px;overflow-y:auto;padding-right:5px}
+.dcard{background:rgba(255,255,255,.022);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.dcard .cn{font-size:12.5px;font-weight:620;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.dcard .cat{font-size:10.5px;color:var(--faint);flex:none}
+.dcard .al{font-size:11px;color:var(--faint);font-family:var(--mono);margin-top:5px;word-break:break-word;line-height:1.7}
+
+/* ---------- 上传列表 ---------- */
+.uplist{display:flex;flex-direction:column;gap:6px;margin-top:11px}
+.upitem{display:flex;align-items:center;gap:9px;font-size:12px;padding:7px 11px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:9px}
+.upitem .nn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.upitem .sz{color:var(--faint);font-family:var(--mono);font-size:11px;flex:none}
+.upitem .rm{color:var(--faint);cursor:pointer;padding:0 3px;flex:none;font-size:15px;line-height:1}
+.upitem .rm:hover{color:var(--bad)}
+
+.toast{
+  position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--card2);border:1px solid var(--border2);padding:11px 20px;border-radius:11px;
+  font-size:13px;z-index:200;opacity:0;transition:.28s;box-shadow:0 12px 40px rgba(0,0,0,.55);max-width:min(560px,88vw)
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{border-color:rgba(248,113,113,.5);color:#fca5a5}
+.hide{display:none!important}
+.foot{text-align:center;color:var(--faint);font-size:11.5px;padding:26px 0 8px;line-height:2}
+.foot code{font-family:var(--mono);color:var(--dim);background:rgba(255,255,255,.05);padding:1.5px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="logo">
+      <div class="mark">◆</div>
+      <div>简历 · JD 智能匹配<br><small>六维加权打分 · 逐条证据溯源 · 缺口清单</small></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="badges">
+      <div class="badge" id="bEngine"><span class="dot" id="dEngine"></span>引擎 <b id="tEngine">-</b></div>
+      <div class="badge" id="bLlm"><span class="dot" id="dLlm"></span><b id="tLlm">-</b></div>
+      <div class="badge">技能词典 <b id="tSkills">-</b> 条</div>
+      <div class="badge">已匹配 <b id="tRuns">-</b> 次</div>
+      <div class="badge"><span class="dot" id="dCfg"></span><b id="tCfg">-</b></div>
+      <button class="btn ghost" id="btnPing">测试模型连接</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ================= 左列：输入 ================= -->
+  <div class="col">
+    <div class="card">
+      <div class="hd">
+        <h2><span class="ico">▤</span>职位描述（JD）</h2>
+        <div class="spacer"></div>
+        <button class="btn ghost" data-example="jd_ai_app_engineer">AI 岗</button>
+        <button class="btn ghost" data-example="jd_backend_python">后端岗</button>
+      </div>
+      <div class="bd">
+        <textarea id="jdText" rows="13" placeholder="把你的目标岗位 JD 粘贴到这里……&#10;&#10;建议包含「岗位职责」和「任职要求」两段，识别会更准确。"></textarea>
+        <div class="meta"><span id="jdCount">0 字符</span><span id="jdParsed"></span></div>
+        <div class="summary hidden" id="jdSummary"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd">
+        <h2><span class="ico">▥</span>简历</h2>
+        <div class="spacer"></div>
+        <button class="btn ghost" data-example="resume_zhangsan">AI 简历</button>
+        <button class="btn ghost" data-example="resume_lisi">后端简历</button>
+        <button class="btn" id="btnUpload">上传文件</button>
+        <input type="file" id="fileInput" class="hide" accept=".txt,.md,.markdown,.json,.csv,.pdf,.docx">
+      </div>
+      <div class="bd">
+        <textarea id="resumeText" rows="13" placeholder="粘贴简历全文，或点上方「上传文件」（支持 txt / md / pdf / docx）。&#10;&#10;有「教育背景 / 实习经历 / 项目经历 / 专业技能」这些小标题的话，解析效果最好。"></textarea>
+        <div class="meta"><span id="resumeCount">0 字符</span><span id="resumeParsed"></span></div>
+        <div class="summary hidden" id="resumeSummary"></div>
+        <div class="uplist" id="upList"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="bd">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn primary" id="btnMatch" style="flex:1;justify-content:center;padding:11px">
+            开始匹配分析
+          </button>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--dim)">
+            面试题
+            <select id="qCount" style="background:rgba(0,0,0,.3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 9px;font-family:inherit;font-size:12.5px;outline:none">
+              <option value="0">不生成</option>
+              <option value="4">4 条</option>
+              <option value="6" selected>6 条</option>
+              <option value="9">9 条</option>
+            </select>
+          </label>
+        </div>
+        <div class="progress" id="progress">
+          <div class="bar"><i id="progBar"></i></div>
+          <div class="txt"><span id="progLabel">准备中…</span><span id="progPct">0%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 右列：结果 ================= -->
+  <div class="col">
+    <div id="resultArea">
+      <div class="empty">
+        <div class="big">◇</div>
+        <h3>还没有匹配结果</h3>
+        <p>
+          左侧填入职位描述与简历，点「开始匹配分析」。<br>
+          没有大模型 API Key 也能完整跑通 —— 解析会走内置的规则引擎，
+          打分逻辑完全一致。
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="card dict" style="max-width:1720px;margin:0 auto 40px;width:calc(100% - 52px)">
+  <div class="hd">
+    <h2><span class="ico">⌗</span>技能词典</h2>
+    <div class="spacer"></div>
+    <span class="badge" id="dictInfo">-</span>
+  </div>
+  <div class="bd">
+    <div class="search">
+      <input type="text" id="dictQuery" placeholder="搜索技能或别名，例如：js / k8s / 大模型 / 向量  ——  可以看到同一技能的所有写法都被归一到哪里">
+      <button class="btn" id="btnDict">查询</button>
+      <button class="btn ghost" id="btnDictReset">重置</button>
+    </div>
+    <div class="dictgrid" id="dictGrid"></div>
+  </div>
+</div>
+
+<div class="foot">
+  所有分数由确定性算法产出，可复现、可追溯 · 解析由 <code>app/parser.py</code> 规则引擎完成（可选大模型补漏）<br>
+  本项目不保存任何真实 API Key，请复制 <code>.env.example</code> 为 <code>.env</code> 后填入你自己的 Key
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ======================= 工具 ======================= */
+const $ = (id) => document.getElementById(id);
+const DIM_COLORS = {
+  must_have: "#4f8cff", nice_to_have: "#a78bfa", experience: "#34d399",
+  education: "#fbbf24", domain: "#22d3ee", project: "#f472b6"
+};
+const QUESTIONS = ["不生成", "4 条", "6 条", "9 条"];
+
+let toastTimer = null;
+function toast(msg, isError) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.className = "toast on" + (isError ? " err" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = "toast"; }, 3600);
+}
+
+function esc(text) {
+  return String(text == null ? "" : text)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function pct(value) {
+  const n = Number(value);
+  return isFinite(n) ? Math.round(n * 100) + "%" : "-";
+}
+
+function scoreColor(score) {
+  if (score >= 85) return "#34d399";
+  if (score >= 70) return "#4f8cff";
+  if (score >= 55) return "#fbbf24";
+  return "#f87171";
+}
+
+/* ======================= 启动 ======================= */
+async function bootstrap() {
+  try {
+    const cfg = await (await fetch("/api/config")).json();
+    renderConfig(cfg);
+    loadStats();
+    loadExamples();
+    loadDict("");
+    loadResumes();
+  } catch (err) {
+    toast("初始化失败：" + err.message, true);
+  }
+
+  // ?demo=1 时自动跑一遍内置示例。
+  // 用途一：截图与演示（分享链接点开就能看到完整报告，不用手动填两份长文本）。
+  // 用途二：CI 里用它做前端"真的能渲染出东西"的冒烟检查。
+  if (new URLSearchParams(location.search).get("demo") === "1") {
+    await runDemo();
+  }
+}
+
+async function runDemo() {
+  try {
+    const [jd, resume] = await Promise.all([
+      (await fetch("/api/examples/jd_ai_app_engineer")).json(),
+      (await fetch("/api/examples/resume_zhangsan")).json()
+    ]);
+    $("jdText").value = jd.text;
+    $("resumeText").value = resume.text;
+    onInput("jd");
+    onInput("resume");
+    await startMatch();
+  } catch (err) {
+    toast("演示数据加载失败：" + err.message, true);
+  }
+}
+
+bootstrap();
+
+function renderConfig(cfg) {
+  $("tEngine").textContent = cfg.engine === "llm" ? "大模型" : "规则";
+  $("dEngine").className = "dot " + (cfg.engine === "llm" ? "on" : "off");
+  $("tSkills").textContent = cfg.skill_count;
+  $("tLlm").textContent = cfg.llm_enabled ? cfg.model : "未配置 Key";
+  $("dLlm").className = "dot " + (cfg.llm_enabled ? "on" : "off");
+  $("tCfg").textContent = cfg.llm_enabled ? cfg.provider : "离线可跑";
+  $("dCfg").className = "dot " + (cfg.llm_enabled ? "on" : "off");
+  $("dictInfo").textContent = cfg.skill_count + " 个标准技能 · " + cfg.categories.length + " 个大类";
+}
+
+async function loadStats() {
+  try {
+    const st = await (await fetch("/api/stats")).json();
+    $("tRuns").textContent = st.matches_run;
+  } catch (e) { /* 统计失败不影响使用 */ }
+}
+
+async function loadExamples() {
+  document.querySelectorAll("[data-example]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const key = btn.getAttribute("data-example");
+      try {
+        const data = await (await fetch("/api/examples/" + key)).json();
+        if (data.kind === "jd") {
+          $("jdText").value = data.text;
+          onInput("jd");
+        } else {
+          $("resumeText").value = data.text;
+          onInput("resume");
+        }
+        toast("已填充示例：" + data.label);
+      } catch (err) {
+        toast("示例加载失败：" + err.message, true);
+      }
+    });
+  });
+}
+
+/* ======================= 输入 ======================= */
+function onInput(which) {
+  if (which === "jd") {
+    $("jdCount").textContent = $("jdText").value.length + " 字符";
+  } else {
+    $("resumeCount").textContent = $("resumeText").value.length + " 字符";
+  }
+}
+$("jdText").addEventListener("input", () => onInput("jd"));
+$("resumeText").addEventListener("input", () => onInput("resume"));
+
+/* ======================= 上传 ======================= */
+$("btnUpload").addEventListener("click", () => $("fileInput").click());
+
+$("fileInput").addEventListener("change", async (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append("file", file);
+  try {
+    const res = await fetch("/api/resumes", { method: "POST", body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || ("HTTP " + res.status));
+    $("resumeText").value = data.preview + "\n…（已保存完整内容，匹配时会读取全文）";
+    onInput("resume");
+    await loadResumes();
+    toast("已上传：" + data.name + "（" + data.char_count + " 字符）");
+  } catch (err) {
+    toast("上传失败：" + err.message, true);
+  }
+  ev.target.value = "";
+});
+
+async function loadResumes() {
+  try {
+    const items = await (await fetch("/api/resumes")).json();
+    const box = $("upList");
+    if (!items.length) { box.innerHTML = ""; return; }
+    box.innerHTML = items.map((item) =>
+      `<div class="upitem">
+         <span class="nn">${esc(item.name)}</span>
+         <span class="sz">${item.char_count} 字</span>
+         <span class="rm" data-rid="${esc(item.resume_id)}" title="删除">×</span>
+       </div>`).join("");
+    box.querySelectorAll(".rm").forEach((el) => {
+      el.addEventListener("click", async () => {
+        const rid = el.getAttribute("data-rid");
+        await fetch("/api/resumes/" + rid, { method: "DELETE" });
+        await loadResumes();
+        toast("已删除");
+      });
+    });
+  } catch (e) { /* 忽略 */ }
+}
+
+/* ======================= SSE 流式匹配 ======================= */
+function parseSSEChunk(chunk, onEvent) {
+  let event = "message";
+  let data = "";
+  for (const line of chunk.split("\n")) {
+    if (line.indexOf("event: ") === 0) event = line.slice(7).trim();
+    else if (line.indexOf("data: ") === 0) data += line.slice(6);
+  }
+  if (!data) return;
+  if (data === "{}" && event === "[DONE]") { onEvent("[DONE]", {}); return; }
+  try { onEvent(event, JSON.parse(data)); } catch (e) { /* 忽略坏包 */ }
+}
+
+async function streamMatch(payload, onEvent) {
+  const res = await fetch("/api/match/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || ("HTTP " + res.status));
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let idx;
+    while ((idx = buf.indexOf("\n\n")) >= 0) {
+      const chunk = buf.slice(0, idx);
+      buf = buf.slice(idx + 2);
+      parseSSEChunk(chunk, onEvent);
+    }
+  }
+}
+
+$("btnMatch").addEventListener("click", startMatch);
+
+async function startMatch() {
+  const jdText = $("jdText").value.trim();
+  const resumeText = $("resumeText").value.trim();
+  if (!jdText) { toast("请先填写职位描述", true); return; }
+  if (!resumeText) { toast("请先填写简历内容", true); return; }
+
+  const btn = $("btnMatch");
+  btn.disabled = true;
+  btn.textContent = "分析中…";
+  $("progress").className = "progress on";
+  setProgress(6, "提交请求");
+
+  try {
+    let final = null;
+    let streamError = null;
+    await streamMatch(
+      { jd_text: jdText, resume_text: resumeText, want_questions: true, question_count: Number($("qCount").value) || 0 },
+      (event, data) => {
+        if (event === "stage") { setProgress(data.progress || 30, data.label + "…"); }
+        else if (event === "parsed") {
+          if (data.target === "jd") { renderJdSummary(data); }
+          else { renderResumeSummary(data); }
+        } else if (event === "scored") { setProgress(95, "生成报告"); }
+        else if (event === "done") { final = data; }
+        else if (event === "error") { streamError = new Error(data.message || "服务端错误"); }
+      }
+    );
+    if (streamError) throw streamError;
+    if (!final) throw new Error("服务端未返回完整结果");
+    setProgress(100, "完成");
+    renderReport(final);
+    loadStats();
+    toast("匹配完成，耗时 " + final.elapsed_ms + " ms");
+  } catch (err) {
+    toast("匹配失败：" + err.message, true);
+    setProgress(0, "失败");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "开始匹配分析";
+    setTimeout(() => { $("progress").className = "progress"; }, 1400);
+  }
+}
+
+function setProgress(value, label) {
+  $("progBar").style.width = Math.max(0, Math.min(100, value)) + "%";
+  $("progLabel").textContent = label;
+  $("progPct").textContent = Math.round(value) + "%";
+}
+
+/* ======================= 解析摘要 ======================= */
+function renderJdSummary(data) {
+  const el = $("jdSummary");
+  el.className = "summary";
+  const must = (data.must_have || []).map((s) => `<span class="chip must">${esc(s)}</span>`).join("");
+  const nice = (data.nice_to_have || []).map((s) => `<span class="chip nice">${esc(s)}</span>`).join("");
+  el.innerHTML =
+    `<div class="row"><span class="k">岗位</span><span class="v">${esc(data.title || "未识别")}</span></div>
+     <div class="row"><span class="k">解析</span><span class="v">${data.engine === "llm" ? "大模型抽取" : "规则引擎"} · 硬性 ${(data.must_have || []).length} 项 / 加分 ${(data.nice_to_have || []).length} 项</span></div>
+     <div class="chips">${must}${nice}</div>`;
+  $("jdParsed").textContent = (data.must_have || []).length + " 项硬性要求";
+}
+
+function renderResumeSummary(data) {
+  const el = $("resumeSummary");
+  el.className = "summary";
+  el.innerHTML =
+    `<div class="row"><span class="k">姓名</span><span class="v">${esc(data.name || "未识别")}</span></div>
+     <div class="row"><span class="k">技能</span><span class="v">识别到 ${data.skill_count} 项 · 折算经验 ${data.total_years} 年</span></div>
+     <div class="row"><span class="k">解析</span><span class="v">${data.engine === "llm" ? "大模型抽取" : "规则引擎"}</span></div>`;
+  $("resumeParsed").textContent = data.skill_count + " 项技能";
+}
+
+/* ======================= 报告渲染 ======================= */
+let lastResult = null;
+let recomputeTimer = null;
+
+function renderReport(data) {
+  lastResult = data;
+  const report = data.report;
+  const jd = data.jd;
+
+  const area = $("resultArea");
+  area.innerHTML = `
+    <div class="col">
+      <div class="card" id="cardScore"></div>
+      <div class="card" id="cardRadar"></div>
+      <div class="card" id="cardDims"></div>
+      <div class="card" id="cardMatrix"></div>
+      <div class="card" id="cardQuestions"></div>
+      <div class="card" id="cardAdvice"></div>
+    </div>`;
+
+  renderScore(report, data, jd);
+  renderRadar(report);
+  renderDimensions(report);
+  renderMatrix(report, data);
+  renderQuestions(report);
+  renderAdvice(report);
+  bindDims();
+}
+
+function renderScore(report, data, jd) {
+  const R = 66;
+  const C = 2 * Math.PI * R;
+  const filled = C * (report.overall / 100);
+  const color = scoreColor(report.overall);
+
+  $("cardScore").innerHTML = `
+    <div class="scorebox">
+      <div class="ring">
+        <svg width="150" height="150" viewBox="0 0 150 150">
+          <circle cx="75" cy="75" r="${R}" fill="none" stroke="rgba(255,255,255,.075)" stroke-width="11"></circle>
+          <circle cx="75" cy="75" r="${R}" fill="none" stroke="${color}" stroke-width="11"
+                  stroke-linecap="round" stroke-dasharray="${filled} ${C - filled}"
+                  style="filter:drop-shadow(0 0 9px ${color}88)"></circle>
+        </svg>
+        <div class="mid">
+          <div class="num" style="color:${color}">${report.overall}</div>
+          <div class="lbl">MATCH SCORE</div>
+        </div>
+      </div>
+      <div>
+        <div class="verdictline">
+          <span class="verdict" style="color:${color}">${esc(report.verdict)}</span>
+          <span class="vtag v-${esc(report.verdict_level)}">${esc(report.verdict_level)} 级</span>
+          <span class="badge">硬性技能 ${esc(report.must_ratio)}</span>
+          <span class="badge">${report.engine === "llm" ? "大模型辅助抽取" : "规则引擎"}</span>
+          <span class="badge">耗时 ${data.elapsed_ms} ms</span>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="n" style="color:#34d399">${(report.matched_skills || []).length}</div><div class="t">双方都提到</div></div>
+          <div class="kpi"><div class="n" style="color:#f87171">${(report.missing_must || []).length}</div><div class="t">缺失硬性技能</div></div>
+          <div class="kpi"><div class="n" style="color:#fbbf24">${(report.missing_nice || []).length}</div><div class="t">缺失加分项</div></div>
+          <div class="kpi"><div class="n" style="color:#a78bfa">${(report.extra_skills || []).length}</div><div class="t">简历额外技能</div></div>
+          <div class="kpi"><div class="n">${esc(jd.title || "—")}</div><div class="t">目标岗位</div></div>
+        </div>
+      </div>
+    </div>`;
+
+  renderWeightPanel(report);
+}
+
+function renderWeightPanel(report) {
+  const card = $("cardScore");
+  const dims = report.dimensions || [];
+  const rows = dims.map((d) => {
+    const color = DIM_COLORS[d.key] || "#4f8cff";
+    const na = d.applicable === false;
+    return `<div class="wrow${na ? " na" : ""}" data-key="${esc(d.key)}">
+      <span class="nm"><i style="background:${color}"></i>${esc(d.label)}</span>
+      <input type="range" min="0" max="100" value="${Math.round((report.weights[d.key] || 0) * 100)}" ${na ? "disabled" : ""}>
+      <span class="val">${Math.round((report.weights[d.key] || 0) * 100)}%</span>
+    </div>`;
+  }).join("");
+
+  card.insertAdjacentHTML("beforeend", `
+    <div style="border-top:1px solid var(--border);padding:16px">
+      <div style="font-size:12.5px;color:var(--dim);margin-bottom:12px;line-height:1.8">
+        <b style="color:var(--text)">维度权重可调</b> —— 不同岗位看重的维度不一样。
+        拖动滑条会<b style="color:var(--text)">实时重算</b>总分与雷达图，不重新解析、不调用大模型。
+        <span style="color:var(--faint)">（不适用的维度权重为 0，其份额会按比例分给其余维度）</span>
+      </div>
+      <div class="wlist" id="weightList">${rows}</div>
+      <div style="margin-top:12px;display:flex;gap:9px">
+        <button class="btn ghost" id="btnResetW">恢复默认权重</button>
+        <span class="badge" id="wSum">权重合计 100%</span>
+      </div>
+    </div>`);
+
+  card.querySelectorAll("#weightList input[type=range]").forEach((input) => {
+    input.addEventListener("input", () => {
+      input.parentElement.querySelector(".val").textContent = input.value + "%";
+      scheduleRecompute();
+    });
+  });
+
+  card.querySelector("#btnResetW").addEventListener("click", async () => {
+    const cfg = await (await fetch("/api/config")).json();
+    card.querySelectorAll("#weightList .wrow").forEach((row) => {
+      const key = row.getAttribute("data-key");
+      const def = (cfg.default_weights && cfg.default_weights[key]) || 0;
+      const input = row.querySelector("input");
+      input.value = Math.round(def * 100);
+      row.querySelector(".val").textContent = Math.round(def * 100) + "%";
+    });
+    await doRecompute();
+  });
+}
+
+function collectWeights() {
+  const out = {};
+  document.querySelectorAll("#weightList .wrow").forEach((row) => {
+    out[row.getAttribute("data-key")] = Number(row.querySelector("input").value) / 100;
+  });
+  return out;
+}
+
+function scheduleRecompute() {
+  clearTimeout(recomputeTimer);
+  recomputeTimer = setTimeout(doRecompute, 220);
+}
+
+async function doRecompute() {
+  if (!lastResult) return;
+  try {
+    const res = await fetch("/api/recompute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jd: lastResult.jd,
+        resume: lastResult.resume,
+        weights: collectWeights(),
+        want_questions: false
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || ("HTTP " + res.status));
+    lastResult.report = data.report;
+    // 只重绘与分数相关的区域，保留权重滑条当前的拖动状态
+    const dimsOpen = {};
+    document.querySelectorAll(".dim").forEach((d) => { dimsOpen[d.getAttribute("data-key")] = d.classList.contains("open"); });
+    renderScoreOnly(data.report, lastResult);
+    renderRadar(data.report);
+    renderDimensions(data.report);
+    bindDims();
+    document.querySelectorAll(".dim").forEach((d) => {
+      if (dimsOpen[d.getAttribute("data-key")]) d.classList.add("open");
+    });
+  } catch (err) {
+    toast("重算失败：" + err.message, true);
+  }
+}
+
+function renderScoreOnly(report, data) {
+  const R = 66;
+  const C = 2 * Math.PI * R;
+  const filled = C * (report.overall / 100);
+  const color = scoreColor(report.overall);
+  const ring = $("cardScore").querySelector(".ring");
+  if (ring) {
+    ring.innerHTML = `
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle cx="75" cy="75" r="${R}" fill="none" stroke="rgba(255,255,255,.075)" stroke-width="11"></circle>
+        <circle cx="75" cy="75" r="${R}" fill="none" stroke="${color}" stroke-width="11"
+                stroke-linecap="round" stroke-dasharray="${filled} ${C - filled}"
+                style="filter:drop-shadow(0 0 9px ${color}88)"></circle>
+      </svg>
+      <div class="mid">
+        <div class="num" style="color:${color}">${report.overall}</div>
+        <div class="lbl">MATCH SCORE</div>
+      </div>`;
+  }
+  const v = $("cardScore").querySelector(".verdict");
+  if (v) { v.textContent = report.verdict; v.style.color = color; }
+  const tag = $("cardScore").querySelector(".vtag");
+  if (tag) { tag.textContent = report.verdict_level + " 级"; tag.className = "vtag v-" + report.verdict_level; }
+  const sum = collectWeights();
+  const total = Object.keys(sum).reduce((acc, k) => acc + sum[k], 0);
+  const box = $("wSum");
+  if (box) box.textContent = "权重合计 " + Math.round(total * 100) + "%";
+}
+
+/* ======================= 雷达图（手写 SVG） ======================= */
+function renderRadar(report) {
+  const dims = report.dimensions || [];
+  const size = 320, cx = size / 2, cy = size / 2 + 4, R = 106;
+  const n = dims.length || 1;
+  const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
+
+  const point = (i, r) => [cx + Math.cos(ang(i)) * r, cy + Math.sin(ang(i)) * r];
+  const poly = (r) => dims.map((_, i) => point(i, r).map((v) => v.toFixed(1)).join(",")).join(" ");
+
+  const rings = [0.25, 0.5, 0.75, 1].map((f) =>
+    `<polygon points="${poly(R * f)}" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1"/>`).join("");
+
+  const axes = dims.map((_, i) => {
+    const p = point(i, R);
+    return `<line x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="rgba(255,255,255,.08)" stroke-width="1"/>`;
+  }).join("");
+
+  const dataPts = dims.map((d, i) => point(i, Math.max(2, (d.score / 100) * R)));
+  const dataPoly = dataPts.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+
+  const dots = dataPts.map((p, i) => {
+    const color = DIM_COLORS[dims[i].key] || "#4f8cff";
+    return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.6" fill="${color}" stroke="var(--bg2)" stroke-width="1.6"/>`;
+  }).join("");
+
+  const labels = dims.map((d, i) => {
+    const p = point(i, R + 30);
+    const anchor = Math.abs(p[0] - cx) < 12 ? "middle" : (p[0] > cx ? "start" : "end");
+    const color = DIM_COLORS[d.key] || "#4f8cff";
+    return `<text x="${p[0].toFixed(1)}" y="${(p[1] - 4).toFixed(1)}" text-anchor="${anchor}"
+              font-size="11.5" fill="var(--dim)" font-family="system-ui">${esc(d.label)}</text>
+            <text x="${p[0].toFixed(1)}" y="${(p[1] + 10).toFixed(1)}" text-anchor="${anchor}"
+              font-size="11.5" fill="${color}" font-family="ui-monospace" font-weight="600">${d.score}</text>`;
+  }).join("");
+
+  $("cardRadar").innerHTML = `
+    <div class="hd"><h2><span class="ico">◈</span>六维雷达</h2><div class="spacer"></div>
+      <span class="badge">各维度独立打分，可展开查看依据</span></div>
+    <div class="bd">
+      <div class="radarwrap">
+        <svg class="radar" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+          <defs>
+            <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#4f8cff" stop-opacity=".46"/>
+              <stop offset="100%" stop-color="#22d3ee" stop-opacity=".2"/>
+            </linearGradient>
+          </defs>
+          ${rings}${axes}
+          <polygon points="${dataPoly}" fill="url(#rg)" stroke="#4f8cff" stroke-width="2" stroke-linejoin="round"/>
+          ${dots}${labels}
+        </svg>
+        <div>
+          <div class="sect-t">维度得分与权重</div>
+          <div class="wlist">
+            ${dims.map((d) => {
+              const color = DIM_COLORS[d.key] || "#4f8cff";
+              const na = d.applicable === false;
+              return `<div class="wrow" style="grid-template-columns:96px 1fr 72px">
+                <span class="nm"><i style="background:${color}"></i>${esc(d.label)}</span>
+                <span style="height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;display:block">
+                  <span style="display:block;height:100%;width:${na ? 0 : d.score}%;background:${color};border-radius:3px"></span>
+                </span>
+                <span class="val" style="color:${na ? "var(--faint)" : color};font-weight:600">${na ? "不适用" : d.score + " 分"}</span>
+              </div>`;
+            }).join("")}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ======================= 维度详情 ======================= */
+function renderDimensions(report) {
+  const dims = report.dimensions || [];
+  $("cardDims").innerHTML = `
+    <div class="hd"><h2><span class="ico">▦</span>维度详情</h2><div class="spacer"></div>
+      <span class="badge">点击展开证据与缺口</span></div>
+    <div class="bd">
+      <div class="dims">
+        ${dims.map((d) => {
+          const color = DIM_COLORS[d.key] || "#4f8cff";
+          const na = d.applicable === false;
+          const evidence = (d.evidence || []).map((e) => `<div class="ev">${esc(e)}</div>`).join("");
+          const gaps = (d.gaps || []).map((g) => `<div class="gap">${esc(g)}</div>`).join("");
+          return `<div class="dim" data-key="${esc(d.key)}">
+            <div class="top">
+              <span class="nm" style="color:${na ? "var(--faint)" : "var(--text)"}">${esc(d.label)}</span>
+              <span class="track"><i style="width:${na ? 0 : d.score}%;background:${color}"></i></span>
+              <span class="sc" style="color:${na ? "var(--faint)" : color}">${na ? "—" : d.score}</span>
+              <span class="cw">${na ? "不适用" : "权重 " + Math.round((d.weight || 0) * 100) + "%"}</span>
+              <span class="caret">▶</span>
+            </div>
+            <div class="det">
+              <div class="desc">${esc(d.detail)}</div>
+              ${evidence ? `<div class="sect-t">证据（来自原文）</div>${evidence}` : ""}
+              ${gaps ? `<div class="sect-t">缺口</div>${gaps}` : ""}
+            </div>
+          </div>`;
+        }).join("")}
+      </div>
+    </div>`;
+}
+
+function bindDims() {
+  document.querySelectorAll(".dim .top").forEach((top) => {
+    top.addEventListener("click", () => { top.parentElement.classList.toggle("open"); });
+  });
+}
+
+/* ======================= 技能矩阵 ======================= */
+function renderMatrix(report, data) {
+  const jd = data.jd;
+  const resume = data.resume;
+
+  const box = (title, items, cls, note) => {
+    const chips = (items || []).map((s) => `<span class="chip ${cls}">${esc(s)}</span>`).join("");
+    return `<div class="mbox">
+      <h4>${esc(title)}<span class="n">${(items || []).length}</span></h4>
+      ${note ? `<div style="font-size:11px;color:var(--faint);margin-bottom:8px">${note}</div>` : ""}
+      <div class="chips">${chips || '<span style="font-size:11.5px;color:var(--faint)">（无）</span>'}</div>
+    </div>`;
+  };
+
+  const groups = resume.skill_groups || {};
+  const groupHtml = Object.keys(groups).map((cat) =>
+    `<div class="mbox"><h4>${esc(cat)}<span class="n">${groups[cat].length}</span></h4>
+      <div class="chips">${groups[cat].map((s) => `<span class="chip">${esc(s)}</span>`).join("")}</div>
+    </div>`).join("");
+
+  $("cardMatrix").innerHTML = `
+    <div class="hd"><h2><span class="ico">⊞</span>技能对照</h2><div class="spacer"></div>
+      <span class="badge">JD ${(jd.must_have || []).length + (jd.nice_to_have || []).length} 项 · 简历 ${(resume.skill_names || []).length} 项</span></div>
+    <div class="bd">
+      <div class="matrix">
+        ${box("双方命中", report.matched_skills, "hit", "JD 要求且简历具备")}
+        ${box("缺失硬性技能", report.missing_must, "gap", "简历筛选阶段最可能被卡住的地方")}
+        ${box("缺失加分项", report.missing_nice, "nice", "有则更好，不做决定性影响")}
+        ${box("简历额外技能", (report.extra_skills || []).slice(0, 24), "must", "JD 没要求但你可能超出预期")}
+      </div>
+      <div class="sect-t" style="margin-top:18px">简历技能栈结构</div>
+      <div class="matrix">${groupHtml}</div>
+    </div>`;
+}
+
+/* ======================= 面试问题 ======================= */
+function renderQuestions(report) {
+  const qs = report.interview_questions || [];
+  const kindLabel = { verify: "验证深度", project: "项目追问", gap: "能力缺口", basics: "基础" };
+  const kindClass = { verify: "k-verify", project: "k-project", gap: "k-gap", basics: "k-verify" };
+
+  $("cardQuestions").innerHTML = `
+    <div class="hd"><h2><span class="ico">?</span>针对性面试问题</h2><div class="spacer"></div>
+      <span class="badge">基于本次匹配结果生成 · ${qs.length} 条</span></div>
+    <div class="bd">
+      ${qs.length ? `<div class="qs">${qs.map((q) => `
+        <div class="q ${q.kind === "gap" ? "gap-q" : (q.kind === "project" ? "project-q" : "")}">
+          <div class="qh">
+            <span class="ktag ${kindClass[q.kind] || "k-verify"}">${esc(kindLabel[q.kind] || q.kind)}</span>
+            ${q.skill ? `<span class="chip">${esc(q.skill)}</span>` : ""}
+          </div>
+          <div class="qt">${esc(q.question)}</div>
+          <div class="qr">为什么问这个：${esc(q.rationale)}</div>
+          ${q.anchor ? `<div class="ev" style="margin-top:8px">${esc(q.anchor)}</div>` : ""}
+        </div>`).join("")}</div>`
+      : '<div style="color:var(--faint);font-size:12.5px">未生成面试问题（可在左侧把「面试题」选项调大）。</div>'}
+    </div>`;
+}
+
+/* ======================= 建议 ======================= */
+function renderAdvice(report) {
+  const strengths = report.strengths || [];
+  const risks = report.risks || [];
+  const advice = report.advice || [];
+
+  $("cardAdvice").innerHTML = `
+    <div class="hd"><h2><span class="ico">✓</span>优势 · 风险 · 建议</h2></div>
+    <div class="bd" style="display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+      <div>
+        <div class="sect-t" style="margin-top:0">优势</div>
+        <ul class="li good">${strengths.length ? strengths.map((s) => `<li>${esc(s)}</li>`).join("") : '<li style="color:var(--faint)">暂无明显优势项</li>'}</ul>
+      </div>
+      <div>
+        <div class="sect-t" style="margin-top:0">风险</div>
+        <ul class="li warn">${risks.length ? risks.map((r) => `<li>${esc(r)}</li>`).join("") : '<li style="color:var(--faint)">未发现明显风险项</li>'}</ul>
+      </div>
+      <div style="grid-column:1/-1">
+        <div class="sect-t" style="margin-top:0">改进建议</div>
+        <ul class="li adv">${advice.length ? advice.map((a) => `<li>${esc(a)}</li>`).join("") : '<li style="color:var(--faint)">暂无建议</li>'}</ul>
+      </div>
+    </div>`;
+}
+
+/* ======================= 技能词典 ======================= */
+async function loadDict(query) {
+  try {
+    const url = "/api/skills?limit=200" + (query ? "&q=" + encodeURIComponent(query) : "");
+    const data = await (await fetch(url)).json();
+    const grid = $("dictGrid");
+    if (!data.items || !data.items.length) {
+      grid.innerHTML = '<div style="color:var(--faint);font-size:12.5px;padding:20px 0">没有匹配的技能。词典收录的是 AI 应用 / 后端 / 数据方向常见技术栈。</div>';
+      return;
+    }
+    grid.innerHTML = data.items.map((item) => `
+      <div class="dcard">
+        <div class="cn"><span>${esc(item.canonical)}</span><span class="cat">${esc(item.category)}</span></div>
+        <div class="al">${item.aliases.map((a) => esc(a)).join(" · ")}</div>
+        ${item.parents && item.parents.length ? `<div class="al" style="color:var(--accent)">↳ 归入上位技能：${item.parents.map((p) => esc(p)).join("、")}</div>` : ""}
+      </div>`).join("");
+    $("dictInfo").textContent = "匹配 " + data.matched + " / 共 " + data.total + " 个标准技能";
+  } catch (err) {
+    toast("词典加载失败：" + err.message, true);
+  }
+}
+
+$("btnDict").addEventListener("click", () => loadDict($("dictQuery").value.trim()));
+$("btnDictReset").addEventListener("click", () => { $("dictQuery").value = ""; loadDict(""); });
+$("dictQuery").addEventListener("keydown", (ev) => { if (ev.key === "Enter") loadDict($("dictQuery").value.trim()); });
+
+/* ======================= LLM 连通性 ======================= */
+$("btnPing").addEventListener("click", async () => {
+  const btn = $("btnPing");
+  btn.disabled = true;
+  btn.textContent = "测试中…";
+  try {
+    const res = await (await fetch("/api/llm/ping", { method: "POST" })).json();
+    toast((res.ok ? "✓ " : "✗ ") + res.message + (res.latency_ms ? "（" + res.latency_ms + " ms）" : ""), !res.ok);
+  } catch (err) {
+    toast("测试失败：" + err.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "测试模型连接";
+  }
+});
+
+</script>
+</body>
+</html>
